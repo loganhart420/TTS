@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from typing import List
 
-from coqpit import MISSING, Coqpit, check_argument
+from coqpit import Coqpit, check_argument
 
 from TTS.config import BaseAudioConfig, BaseDatasetConfig, BaseTrainingConfig
 
@@ -97,6 +97,8 @@ class BaseTTSConfig(BaseTrainingConfig):
             Audio processor config object instance.
         use_phonemes (bool):
             enable / disable phoneme use.
+        use_espeak_phonemes (bool):
+            enable / disable eSpeak-compatible phonemes (only if use_phonemes = `True`).
         compute_input_seq_cache (bool):
             enable / disable precomputation of the phoneme sequences. At the expense of some delay at the beginning of
             the training, It allows faster data loader time and precise limitation with `max_seq_len` and
@@ -131,14 +133,27 @@ class BaseTTSConfig(BaseTrainingConfig):
         datasets (List[BaseDatasetConfig]):
             List of datasets used for training. If multiple datasets are provided, they are merged and used together
             for training.
+        optimizer (str):
+            Optimizer used for the training. Set one from `torch.optim.Optimizer` or `TTS.utils.training`.
+            Defaults to ``.
+        optimizer_params (dict):
+            Optimizer kwargs. Defaults to `{"betas": [0.8, 0.99], "weight_decay": 0.0}`
+        lr_scheduler (str):
+            Learning rate scheduler for the training. Use one from `torch.optim.Scheduler` schedulers or
+            `TTS.utils.training`. Defaults to ``.
+        lr_scheduler_params (dict):
+            Parameters for the generator learning rate scheduler. Defaults to `{"warmup": 4000}`.
+        test_sentences (List[str]):
+            List of sentences to be used at testing. Defaults to '[]'
     """
 
     audio: BaseAudioConfig = field(default_factory=BaseAudioConfig)
     # phoneme settings
     use_phonemes: bool = False
+    use_espeak_phonemes: bool = True
     phoneme_language: str = None
     compute_input_seq_cache: bool = False
-    text_cleaner: str = MISSING
+    text_cleaner: str = None
     enable_eos_bos_chars: bool = False
     test_sentences_file: str = ""
     phoneme_cache_path: str = None
@@ -155,3 +170,15 @@ class BaseTTSConfig(BaseTrainingConfig):
     add_blank: bool = False
     # dataset
     datasets: List[BaseDatasetConfig] = field(default_factory=lambda: [BaseDatasetConfig()])
+    # optimizer
+    optimizer: str = None
+    optimizer_params: dict = None
+    # scheduler
+    lr_scheduler: str = ""
+    lr_scheduler_params: dict = field(default_factory=lambda: {})
+    # testing
+    test_sentences: List[str] = field(default_factory=lambda: [])
+    # multi-speaker
+    use_speaker_embedding: bool = False
+    use_d_vector_file: bool = False
+    d_vector_dim: int = 0
